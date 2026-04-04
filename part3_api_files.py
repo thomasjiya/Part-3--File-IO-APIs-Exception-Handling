@@ -180,3 +180,221 @@ if post_response.status_code == 200 or post_response.status_code == 201:
 else:
     print(f"✗ POST request failed. Status code: {post_response.status_code}")
 
+# ============================================
+# Task 3 — Exception Handling
+# ============================================
+
+import requests
+
+# ============================================
+# Part A — Guarded Calculator
+# ============================================
+print("=" * 50)
+print("Part A — Safe Divide")
+print("=" * 50)
+
+def safe_divide(a, b):
+    try:
+        result = a / b
+        return result
+
+    except ZeroDivisionError:
+        return "Error: Cannot divide by zero"
+
+    except TypeError:
+        return "Error: Invalid input types"
+
+print(f"safe_divide(10, 2)      = {safe_divide(10, 2)}")
+print(f"safe_divide(10, 0)      = {safe_divide(10, 0)}")
+print(f"safe_divide('ten', 2)   = {safe_divide('ten', 2)}")
+
+# ============================================
+# Part B — Guarded File Reader
+# ============================================
+print("\n" + "=" * 50)
+print("Part B — Safe File Reader")
+print("=" * 50)
+
+def read_file_safe(filename):
+    try:
+        with open(filename, "r", encoding="utf-8") as file:
+            content = file.read()
+        print(f"✓ File '{filename}' read successfully!")
+        return content
+
+    except FileNotFoundError:
+        print(f"Error: File '{filename}' not found.")
+        return None
+
+    finally:
+        print("File operation attempt complete.")
+
+print("\nTesting with python_notes.txt:")
+content = read_file_safe("python_notes.txt")
+if content:
+    print(content)
+
+print("\nTesting with ghost_file.txt:")
+read_file_safe("ghost_file.txt")
+
+# ============================================
+# Part C — Robust API Calls
+# ============================================
+print("\n" + "=" * 50)
+print("Part C — Robust API Calls")
+print("=" * 50)
+
+def fetch_products():
+    try:
+        # timeout=5 means give up if no response in 5 seconds
+        url      = "https://dummyjson.com/products?limit=20"
+        response = requests.get(url, timeout=5)
+
+        if response.status_code == 200:
+            products = response.json()["products"]
+            print(f"✓ Fetched {len(products)} products successfully")
+            return products
+        else:
+            print(f"✗ Failed. Status code: {response.status_code}")
+            return []
+
+    except requests.exceptions.ConnectionError:
+        print("Connection failed. Please check your internet.")
+        return []
+
+    except requests.exceptions.Timeout:
+        print("Request timed out. Try again later.")
+        return []
+
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        return []
+
+def fetch_laptops():
+    try:
+        url      = "https://dummyjson.com/products/category/laptops"
+        response = requests.get(url, timeout=5)
+
+        if response.status_code == 200:
+            laptops = response.json()["products"]
+            print(f"✓ Fetched {len(laptops)} laptops successfully")
+            return laptops
+        else:
+            print(f"✗ Failed. Status code: {response.status_code}")
+            return []
+
+    except requests.exceptions.ConnectionError:
+        print("Connection failed. Please check your internet.")
+        return []
+
+    except requests.exceptions.Timeout:
+        print("Request timed out. Try again later.")
+        return []
+
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        return []
+
+def add_product():
+    try:
+        new_product = {
+            "title":       "My Custom Product",
+            "price":       999,
+            "category":    "electronics",
+            "description": "A product I created via API"
+        }
+
+        response = requests.post(
+            "https://dummyjson.com/products/add",
+            json=new_product,
+            timeout=5
+        )
+
+        if response.status_code in [200, 201]:
+            result = response.json()
+            print(f"✓ Product added! ID: {result.get('id')}, "
+                  f"Title: {result.get('title')}")
+            return result
+        else:
+            print(f"✗ Failed. Status code: {response.status_code}")
+            return None
+
+    except requests.exceptions.ConnectionError:
+        print("Connection failed. Please check your internet.")
+        return None
+
+    except requests.exceptions.Timeout:
+        print("Request timed out. Try again later.")
+        return None
+
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        return None
+
+# Run all API calls
+print("\nFetching products...")
+fetch_products()
+
+print("\nFetching laptops...")
+fetch_laptops()
+
+print("\nAdding new product...")
+add_product()
+
+# ============================================
+# Part D — Input Validation Loop
+# ============================================
+print("\n" + "=" * 50)
+print("Part D — Product Lookup Loop")
+print("=" * 50)
+print("Enter a product ID (1-100) or 'quit' to exit\n")
+
+while True:
+
+    # Ask user for input
+    user_input = input("Enter a product ID to look up (1-100), or 'quit' to exit: ")
+
+    # Check if user wants to quit
+    if user_input.lower() == "quit":
+        print("Goodbye!")
+        break
+
+    # Validate input is a number
+    try:
+        product_id = int(user_input)
+    except ValueError:
+        print(f"⚠ Warning: '{user_input}' is not a valid number. Please enter a number between 1 and 100.\n")
+        continue
+
+    # Validate number is in range 1-100
+    if product_id < 1 or product_id > 100:
+        print(f"⚠ Warning: {product_id} is out of range. Please enter a number between 1 and 100.\n")
+        continue
+
+    # Make API call only if input is valid
+    try:
+        url      = f"https://dummyjson.com/products/{product_id}"
+        response = requests.get(url, timeout=5)
+
+        if response.status_code == 200:
+            product = response.json()
+            print(f"✓ Product found!")
+            print(f"  Title : {product['title']}")
+            print(f"  Price : ${product['price']}\n")
+
+        elif response.status_code == 404:
+            print(f"Product not found.\n")
+
+        else:
+            print(f"Unexpected response: {response.status_code}\n")
+
+    except requests.exceptions.ConnectionError:
+        print("Connection failed. Please check your internet.\n")
+
+    except requests.exceptions.Timeout:
+        print("Request timed out. Try again later.\n")
+
+    except Exception as e:
+        print(f"Unexpected error: {e}\n")
+    
+    

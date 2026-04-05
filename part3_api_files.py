@@ -397,4 +397,144 @@ while True:
     except Exception as e:
         print(f"Unexpected error: {e}\n")
     
-    
+# ============================================
+# Task 4 — Logging to File
+# ============================================
+
+import requests
+from datetime import datetime
+
+# ============================================
+# Logger function
+# ============================================
+def log_error(function_name, error_type, message):
+    # Get current timestamp formatted nicely
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    # Build the log entry
+    log_entry = (f"[{timestamp}] ERROR in {function_name}: "
+                 f"{error_type} — {message}\n")
+
+    # Write to error_log.txt in append mode
+    with open("error_log.txt", "a", encoding="utf-8") as log_file:
+        log_file.write(log_entry)
+
+    # Also print to screen so we can see it
+    print(f"  📝 Logged: {log_entry.strip()}")
+
+# ============================================
+# Test 1: Trigger a ConnectionError
+# ============================================
+print("=" * 60)
+print("Test 1 — Triggering ConnectionError")
+print("=" * 60)
+
+def fetch_unreachable():
+    try:
+        # This URL does not exist — will cause ConnectionError
+        url      = "https://this-host-does-not-exist-xyz.com/api"
+        response = requests.get(url, timeout=5)
+
+    except requests.exceptions.ConnectionError as e:
+        # Log the connection error
+        log_error(
+            function_name = "fetch_unreachable",
+            error_type    = "ConnectionError",
+            message       = "No connection could be made"
+        )
+        print("  Connection failed as expected!")
+
+    except requests.exceptions.Timeout:
+        log_error(
+            function_name = "fetch_unreachable",
+            error_type    = "Timeout",
+            message       = "Request timed out"
+        )
+
+    except Exception as e:
+        log_error(
+            function_name = "fetch_unreachable",
+            error_type    = "UnexpectedError",
+            message       = str(e)
+        )
+
+fetch_unreachable()
+
+# ============================================
+# Test 2: Trigger an HTTP 404 error
+# ============================================
+print("\n" + "=" * 60)
+print("Test 2 — Triggering HTTP 404 Error")
+print("=" * 60)
+
+def lookup_product(product_id):
+    try:
+        url      = f"https://dummyjson.com/products/{product_id}"
+        response = requests.get(url, timeout=5)
+
+        # Check status code manually — 404 is not an exception!
+        if response.status_code == 200:
+            product = response.json()
+            print(f"  ✓ Found: {product['title']} — ${product['price']}")
+
+        elif response.status_code == 404:
+            # Log the 404 manually inside if block
+            log_error(
+                function_name = "lookup_product",
+                error_type    = "HTTPError",
+                message       = f"404 Not Found for product ID {product_id}"
+            )
+            print(f"  Product ID {product_id} not found.")
+
+        else:
+            log_error(
+                function_name = "lookup_product",
+                error_type    = "HTTPError",
+                message       = f"Unexpected status {response.status_code} "
+                                f"for product ID {product_id}"
+            )
+
+    except requests.exceptions.ConnectionError:
+        log_error(
+            function_name = "lookup_product",
+            error_type    = "ConnectionError",
+            message       = "No connection could be made"
+        )
+
+    except requests.exceptions.Timeout:
+        log_error(
+            function_name = "lookup_product",
+            error_type    = "Timeout",
+            message       = "Request timed out"
+        )
+
+    except Exception as e:
+        log_error(
+            function_name = "lookup_product",
+            error_type    = "UnexpectedError",
+            message       = str(e)
+        )
+
+# Test with valid product ID
+print("Looking up product ID 1 (valid):")
+lookup_product(1)
+
+# Test with invalid product ID to trigger 404
+print("\nLooking up product ID 999 (does not exist):")
+lookup_product(999)
+
+# ============================================
+# Read and print full contents of error_log.txt
+# ============================================
+print("\n" + "=" * 60)
+print("Full Contents of error_log.txt")
+print("=" * 60)
+
+with open("error_log.txt", "r", encoding="utf-8") as log_file:
+    contents = log_file.read()
+
+if contents:
+    print(contents)
+else:
+    print("Log file is empty.")
+# =======================================================
